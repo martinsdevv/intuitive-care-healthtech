@@ -35,10 +35,9 @@ yarn-error.log*
 .ruff_cache/
 
 # =====================
-# Data gerada (outputs do teste)
+# Arquivos de download
 # =====================
-data/output/*
-!data/output/.gitkeep
+data/raw/*
 
 # =====================
 # Arquivos temporários
