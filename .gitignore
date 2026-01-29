@@ -1,0 +1,63 @@
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =====================
+# Node / Frontend (Vue)
+# =====================
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =====================
+# Build / Cache
+# =====================
+.cache/
+.mypy_cache/
+.ruff_cache/
+
+# =====================
+# Data gerada (outputs do teste)
+# =====================
+data/output/*
+!data/output/.gitkeep
+
+# =====================
+# Arquivos temporários
+# =====================
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# =====================
+# IDEs / Editores
+# =====================
+.vscode/
+.idea/
+*.iml
+
+# =====================
+# OS
+# =====================
+.DS_Store
+Thumbs.db
