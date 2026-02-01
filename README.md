@@ -33,14 +33,15 @@ Aqui consta o que foi feito em cada teste, incluindo os trade-offs técnicos dec
 python <nome_arquivo>.py
 ```
 
+Os dados brutos e normalizados estão disponiveis na pasta `data/`, contendo os dados "crus" (raw), zips extraídos (extracted), arquivos finais (output) dentre outros. Mantive assim para facilitar a visualização por parte do avaliador.
+
 ### Teste 1 — Integração com API 
 
 
-- [ ] Acesso à api e download dos arquivos de Demonstrações Contábeis dos últimos 3 trimestres. 
-
+- [x] Acesso à api e download dos arquivos de Demonstrações Contábeis dos últimos 3 trimestres. 
 
 Codigo: `backend/src/app/services/ans_download.py`
-- [ ] Extração e normalização de arquivos de acordo com o formato de cada um (CSV, TXT e XLSX). 
+- [x] Extração e normalização de arquivos de acordo com o formato de cada um (CSV, TXT e XLSX). 
  
 Codigo: `backend/src/app/services/ans_normalization.py`
 - [ ] Consolidação dos dados e geração do arquivo final em CSV e ZIP. 
