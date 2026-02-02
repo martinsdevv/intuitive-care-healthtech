@@ -168,13 +168,36 @@ Detalhes em `docs/decisoes_tecnicas.md`.
 
 ---
 
-### Teste 3 — Banco de Dados e Análise (SQL) *(a implementar)*
+### Teste 3 — Banco de Dados e Análise (PostgreSQL)
 
-- [ ] Criar schema e scripts de carga
-- [ ] Consultas analíticas conforme enunciado
+Este teste utiliza os CSVs gerados no Teste 2 para persistência em banco relacional
+(PostgreSQL > 10) e execução de consultas analíticas.
 
-Pasta alvo: `db/`
+**Fontes**
+- `data/output/teste2/consolidado_despesas_final.csv`
+- `data/output/teste2/despesas_agregadas.csv`
+- `data/raw/Relatorio_cadop.csv` (CADOP)
 
+**Modelo**
+- Abordagem normalizada:
+  - Dimensão: dados cadastrais da operadora (CADOP)
+  - Fato: despesas trimestrais por operadora
+- Tabela adicional com a agregação do Teste 2.3 para validação e análise rápida.
+
+**Scripts**
+- `db/001_ddl.sql` — schema, tabelas e índices
+- `db/002_import.sql` — staging, carga dos CSVs, saneamento e rejeições
+- `db/003_queries.sql` — consultas analíticas solicitadas no enunciado
+
+**Execução (psql)**
+```bash
+psql -U postgres -d <seu_banco> -f db/001_ddl.sql
+psql -U postgres -d <seu_banco> -f db/002_import.sql
+psql -U postgres -d <seu_banco> -f db/003_queries.sql
+```
+
+> As decisões técnicas e trade-offs do Teste 3 estão documentados em
+docs/decisoes_tecnicas.md.
 ---
 
 ### Teste 4 — API + Interface Web *(a implementar)*

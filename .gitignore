@@ -35,11 +35,6 @@ yarn-error.log*
 .ruff_cache/
 
 # =====================
-# Arquivos de download
-# =====================
-data/raw/*
-
-# =====================
 # Arquivos temporários
 # =====================
 *.log
