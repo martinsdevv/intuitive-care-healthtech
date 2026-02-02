@@ -2,51 +2,39 @@ import csv
 import zipfile
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
 from typing import Dict, Tuple
 
-
-def getRaizProjeto() -> Path:
-    return Path(__file__).resolve().parents[4]
+from app.core.paths import OUTPUT_TESTE1_DIR, STAGING_DIR
 
 
-def getDiretorioStaging() -> Path:
-    return getRaizProjeto() / "data/staging"
+def getArquivoStaging():
+    return STAGING_DIR / "eventos_sinistros_staging.csv"
 
 
-def getDiretorioFinal() -> Path:
-    return getRaizProjeto() / "data/output/teste1"
+def getArquivoCsvFinal():
+    return OUTPUT_TESTE1_DIR / "consolidado_despesas.csv"
 
 
-def getArquivoStaging() -> Path:
-    return getDiretorioStaging() / "eventos_sinistros_staging.csv"
-
-
-def getArquivoCsvFinal() -> Path:
-    return getDiretorioFinal() / "consolidado_despesas.csv"
-
-
-def getArquivoZipFinal() -> Path:
-    return getDiretorioFinal() / "consolidado_despesas.zip"
+def getArquivoZipFinal():
+    return OUTPUT_TESTE1_DIR / "consolidado_despesas.zip"
 
 
 def parseDecimal(valor: str) -> Decimal:
-    valor = (valor or "").strip()
-    if not valor:
+    v = (valor or "").strip()
+    if not v:
         return Decimal(0)
     try:
-        return Decimal(valor)
+        return Decimal(v)
     except (InvalidOperation, ValueError):
         return Decimal(0)
 
 
-def consolidarDespesas() -> Path:
+def consolidarDespesas():
     stagingPath = getArquivoStaging()
     if not stagingPath.exists():
         raise RuntimeError("Staging não encontrado. Execute a normalização antes.")
 
-    diretorioFinal = getDiretorioFinal()
-    diretorioFinal.mkdir(parents=True, exist_ok=True)
+    OUTPUT_TESTE1_DIR.mkdir(parents=True, exist_ok=True)
 
     csvFinal = getArquivoCsvFinal()
     zipFinal = getArquivoZipFinal()
@@ -72,28 +60,19 @@ def consolidarDespesas() -> Path:
             acumulado[chave] += valor
 
     with open(csvFinal, "w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, delimiter=";")
         writer.writerow(
             ["RegistroANS", "RazaoSocial", "Trimestre", "Ano", "ValorDespesas"]
         )
 
         for (registroAns, ano, trimestre), valor in acumulado.items():
-            writer.writerow(
-                [
-                    registroAns,
-                    "NÃO INFORMADA",
-                    trimestre,
-                    ano,
-                    str(valor),
-                ]
-            )
+            writer.writerow([registroAns, "NÃO INFORMADA", trimestre, ano, str(valor)])
 
-    with zipfile.ZipFile(zipFinal, "w", zipfile.ZIP_DEFLATED) as zipFile:
-        zipFile.write(csvFinal, arcname=csvFinal.name)
+    with zipfile.ZipFile(zipFinal, "w", zipfile.ZIP_DEFLATED) as z:
+        z.write(csvFinal, arcname=csvFinal.name)
 
     return zipFinal
 
 
 if __name__ == "__main__":
-    zipGerado = consolidarDespesas()
-    print(f"Arquivo final gerado em: {zipGerado}")
+    print(f"Gerado: {consolidarDespesas()}")

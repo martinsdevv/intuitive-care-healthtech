@@ -2,50 +2,40 @@ import csv
 import os
 import re
 import zipfile
-from configparser import DEFAULTSECT
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from pathlib import Path
 from typing import Dict, Optional, Tuple
-from webbrowser import get
+
+from app.core.paths import OUTPUT_TESTE2_DIR
+from app.domain.validators import parse_decimal
 
 DEFAULT_ZIP_NOME = "Agregacao_Gabriel_Martins"
 INPUT_FILENAME = "consolidado_despesas_final.csv"
 OUTPUT_FILENAME = "despesas_agregadas.csv"
 
 
-def getRaizProjeto() -> Path:
-    return Path(__file__).resolve().parents[4]
-
-
-def getDiretorioOutput() -> Path:
-    return getRaizProjeto() / "data" / "output" / "teste2"
-
-
-def getDiretorioDelivery() -> Path:
-    return getRaizProjeto() / "delivery"
-
-
 def getArquivoInput() -> Path:
-    return getDiretorioOutput() / INPUT_FILENAME
+    return OUTPUT_TESTE2_DIR / INPUT_FILENAME
 
 
 def getArquivoCsvAgregado() -> Path:
-    return getDiretorioOutput() / OUTPUT_FILENAME
+    return OUTPUT_TESTE2_DIR / OUTPUT_FILENAME
 
 
 def getArquivoZipFinal(nome: Optional[str] = None) -> Path:
-    nome = DEFAULT_ZIP_NOME
+    # ZIP do usecase fica no output do teste2 (runner copia pra delivery)
+    nome = (nome or os.getenv("TESTE_ZIP_NOME") or DEFAULT_ZIP_NOME).strip()
     nome = re.sub(r"[^A-Za-z0-9_-]+", "_", nome)
-    return getDiretorioOutput() / f"Teste_{nome}.zip"
+    return OUTPUT_TESTE2_DIR / f"Teste_{nome}.zip"
 
 
 def detectarEncoding(caminho: Path) -> str:
     amostra = caminho.read_bytes()[:200_000]
-    for encoding in ("utf-8-sig", "utf-8", "latin-1"):
+    for enc in ("utf-8-sig", "utf-8", "latin-1"):
         try:
-            amostra.decode(encoding)
-            return encoding
+            amostra.decode(enc)
+            return enc
         except UnicodeDecodeError:
             continue
     return "latin-1"
@@ -56,30 +46,11 @@ def detectarDelimiter(caminho: Path, encoding: str) -> str:
     return ";" if amostra.count(";") >= amostra.count(",") else ","
 
 
-def parseDecimal(valor: str) -> Optional[Decimal]:
-    v = (valor or "").strip()
-    if not v:
-        return None
-
-    v = v.replace(" ", "")
-    if "," in v and "." in v:
-        # ex: 1.234.567,89
-        v = v.replace(".", "").replace(",", ".")
-    elif "," in v and "." not in v:
-        # ex: 123,45
-        v = v.replace(",", ".")
-
-    try:
-        return Decimal(v)
-    except (InvalidOperation, ValueError):
-        return None
-
-
 @dataclass
 class WelfordAgg:
     """
-    Estatística online por grupo:
-    mantém total, média e M2 para obter desvio padrão (populacional) em 1 passagem.
+    Estatística online por grupo (1 passagem):
+    total, média e M2 (para desvio padrão populacional).
     """
 
     n: int = 0
@@ -122,14 +93,10 @@ def executarAgregacaoAns(nome_zip: Optional[str] = None) -> Tuple[Path, Path]:
             f"Arquivo de entrada não encontrado: {inp}. Rode o Teste 2.2/2.1 antes."
         )
 
-    out_dir = getDiretorioOutput()
-    out_dir.mkdir(parents=True, exist_ok=True)
+    OUTPUT_TESTE2_DIR.mkdir(parents=True, exist_ok=True)
 
     out_csv = getArquivoCsvAgregado()
     out_zip = getArquivoZipFinal(nome_zip)
-
-    # ✅ garante delivery existir (resolve o erro do --clean)
-    out_zip.parent.mkdir(parents=True, exist_ok=True)
 
     enc = detectarEncoding(inp)
     delim = detectarDelimiter(inp, enc)
@@ -145,7 +112,7 @@ def executarAgregacaoAns(nome_zip: Optional[str] = None) -> Tuple[Path, Path]:
             razao = (row.get("RazaoSocial") or "").strip()
             uf = (row.get("UF") or "").strip()
 
-            valor = parseDecimal(row.get("ValorDespesas") or "")
+            valor = parse_decimal(row.get("ValorDespesas") or "")
             if valor is None:
                 continue
 

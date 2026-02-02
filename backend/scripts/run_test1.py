@@ -8,22 +8,18 @@ sys.path.insert(0, str(SRC))
 import argparse
 import shutil
 
-from app.services.ans_consolidate import consolidarDespesas
-from app.services.ans_download import executarDownloadAns
-from app.services.ans_normalization import executarProcessamentoAns
-
-
-def getRaizProjeto() -> Path:
-    return Path(__file__).resolve().parents[2]
+from app.core.paths import EXTRACTED_DIR, OUTPUT_TESTE1_DIR, RAW_DIR, STAGING_DIR
+from app.usecases.ans_consolidate import consolidarDespesas
+from app.usecases.ans_download import executarDownloadAns
+from app.usecases.ans_normalization import executarProcessamentoAns
 
 
 def limparDiretorios():
-    raiz = getRaizProjeto()
     pastas = [
-        raiz / "data/raw",
-        raiz / "data/extracted",
-        raiz / "data/staging",
-        raiz / "data/output/teste1",
+        RAW_DIR,
+        EXTRACTED_DIR,
+        STAGING_DIR,
+        OUTPUT_TESTE1_DIR,
     ]
 
     for pasta in pastas:
@@ -34,7 +30,7 @@ def limparDiretorios():
 
 def main(clean: bool):
     if clean:
-        print("Executando limpeza completa (--clean)")
+        print("Executando limpeza completa do Teste 1 (--clean)")
         limparDiretorios()
 
     print("=== TESTE 1.1 — Download ===")
@@ -58,6 +54,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Remove dados anteriores antes de executar o pipeline",
     )
-
     args = parser.parse_args()
+
     main(clean=args.clean)

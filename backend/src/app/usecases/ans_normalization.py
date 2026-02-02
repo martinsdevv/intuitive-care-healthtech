@@ -8,31 +8,15 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import List, Optional
 
-from app.services.ans_download import (
-    Trimestre,
-    executarDownloadAns,
-)
-from app.services.ans_download import (
-    getDiretorioSaida as getDiretorioRaw,
-)
+from app.core.paths import EXTRACTED_DIR, RAW_DIR, STAGING_DIR
+from app.core.types import Trimestre
+from app.usecases.ans_download import executarDownloadAns
 
 
 @dataclass(frozen=True)
 class ZipJob:
     zipPath: Path
     trimestre: Optional[Trimestre]
-
-
-def getRaizProjeto() -> Path:
-    return Path(__file__).resolve().parents[4]
-
-
-def getDiretorioExtracted() -> Path:
-    return getRaizProjeto() / "data/extracted"
-
-
-def getDiretorioStaging() -> Path:
-    return getRaizProjeto() / "data/staging"
 
 
 def stripAccents(valor: str) -> str:
@@ -63,7 +47,7 @@ def parseData(valor: str) -> str:
     return valor
 
 
-def parseDecimal(valor: str) -> str:
+def parseDecimalStr(valor: str) -> str:
     valor = valor.strip()
     if not valor:
         return ""
@@ -76,10 +60,10 @@ def parseDecimal(valor: str) -> str:
 
 def detectarEncoding(caminho: Path) -> str:
     amostra = caminho.read_bytes()[:200_000]
-    for encoding in ("utf-8-sig", "utf-8", "latin-1"):
+    for enc in ("utf-8-sig", "utf-8", "latin-1"):
         try:
-            amostra.decode(encoding)
-            return encoding
+            amostra.decode(enc)
+            return enc
         except UnicodeDecodeError:
             continue
     return "latin-1"
@@ -103,12 +87,12 @@ def extrairZip(caminhoZip: Path, destino: Path) -> List[Path]:
     destino.mkdir(parents=True, exist_ok=True)
     arquivos: List[Path] = []
 
-    with zipfile.ZipFile(caminhoZip, "r") as zipFile:
-        for info in zipFile.infolist():
+    with zipfile.ZipFile(caminhoZip, "r") as z:
+        for info in z.infolist():
             if info.filename.endswith("/"):
                 continue
             destinoArquivo = destino / Path(info.filename).name
-            with zipFile.open(info) as origem, open(destinoArquivo, "wb") as saida:
+            with z.open(info) as origem, open(destinoArquivo, "wb") as saida:
                 saida.write(origem.read())
             arquivos.append(destinoArquivo)
 
@@ -121,10 +105,10 @@ def normalizarNomeColuna(nome: str) -> str:
 
 
 def indexarColunas(header: List[str]) -> dict[str, int]:
-    indices: dict[str, int] = {}
+    idx: dict[str, int] = {}
     for i, nome in enumerate(header):
-        indices[normalizarNomeColuna(nome)] = i
-    return indices
+        idx[normalizarNomeColuna(nome)] = i
+    return idx
 
 
 CANON_HEADER = [
@@ -170,10 +154,10 @@ def processarCsvParaStaging(
         colunas = indexarColunas(header)
 
         def get(row: List[str], key: str) -> str:
-            idx = colunas.get(key)
-            if idx is None or idx >= len(row):
+            i = colunas.get(key)
+            if i is None or i >= len(row):
                 return ""
-            return row[idx]
+            return row[i]
 
         for row in reader:
             total += 1
@@ -189,10 +173,10 @@ def processarCsvParaStaging(
                     get(row, "REG_ANS").strip(),
                     get(row, "CD_CONTA_CONTABIL").strip(),
                     descricao.strip(),
-                    parseDecimal(get(row, "VL_SALDO_INICIAL"))
+                    parseDecimalStr(get(row, "VL_SALDO_INICIAL"))
                     if "VL_SALDO_INICIAL" in colunas
                     else "",
-                    parseDecimal(get(row, "VL_SALDO_FINAL")),
+                    parseDecimalStr(get(row, "VL_SALDO_FINAL")),
                     str(trimestre.ano) if trimestre else "",
                     str(trimestre.numero) if trimestre else "",
                     caminhoCsv.name,
@@ -203,11 +187,10 @@ def processarCsvParaStaging(
 
 
 def listarZipsRaw() -> List[ZipJob]:
-    diretorio = getDiretorioRaw()
-    diretorio.mkdir(parents=True, exist_ok=True)
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
     jobs: List[ZipJob] = []
 
-    for zipPath in sorted(diretorio.glob("*.zip")):
+    for zipPath in sorted(RAW_DIR.glob("*.zip")):
         jobs.append(
             ZipJob(
                 zipPath=zipPath,
@@ -219,14 +202,12 @@ def listarZipsRaw() -> List[ZipJob]:
 
 
 def executarProcessamentoAns() -> Path:
-    raw = getDiretorioRaw()
-    raw.mkdir(parents=True, exist_ok=True)
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    if not any(raw.glob("*.zip")):
+    if not any(RAW_DIR.glob("*.zip")):
         executarDownloadAns()
 
-    extractedRoot = getDiretorioExtracted()
-    stagingPath = getDiretorioStaging() / "eventos_sinistros_staging.csv"
+    stagingPath = STAGING_DIR / "eventos_sinistros_staging.csv"
 
     jobs = listarZipsRaw()
     if not jobs:
@@ -234,20 +215,14 @@ def executarProcessamentoAns() -> Path:
 
     for job in jobs:
         trimestre = job.trimestre or inferirTrimestreDoZip(job.zipPath.name)
-        destino = extractedRoot / (
+        destino = EXTRACTED_DIR / (
             f"{trimestre.numero}T{trimestre.ano}" if trimestre else job.zipPath.stem
         )
 
         arquivos = extrairZip(job.zipPath, destino)
 
-        csvs: List[Path] = []
-        naoCsv: List[Path] = []
-
-        for a in arquivos:
-            if a.suffix.lower() == ".csv":
-                csvs.append(a)
-            else:
-                naoCsv.append(a)
+        csvs = [a for a in arquivos if a.suffix.lower() == ".csv"]
+        naoCsv = [a for a in arquivos if a.suffix.lower() != ".csv"]
 
         if naoCsv:
             exts = sorted({p.suffix.lower() or "<sem_ext>" for p in naoCsv})

@@ -1,12 +1,13 @@
 import csv
 import re
 import zipfile
-from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 import requests
+from app.core.paths import OUTPUT_TESTE1_DIR, OUTPUT_TESTE2_DIR, RAW_DIR
+from app.domain.models import CadopRegistro
+from app.domain.validators import limpar_digitos, parse_decimal, validar_cnpj
 
 userAgent = "v01dslick"
 cadopBaseUrl = (
@@ -15,47 +16,16 @@ cadopBaseUrl = (
 cadopFileName = "Relatorio_cadop.csv"
 
 
-@dataclass(frozen=True)
-class CadopRegistro:
-    registroAns: str
-    cnpj: str
-    razaoSocial: str
-    modalidade: str
-    uf: str
-
-
-def getRaizProjeto() -> Path:
-    return Path(__file__).resolve().parents[4]
-
-
-def getDiretorioRaw() -> Path:
-    return getRaizProjeto() / "data/raw"
-
-
-def getDiretorioOutputBase() -> Path:
-    return getRaizProjeto() / "data/output"
-
-
-def getDiretorioOutputTeste1() -> Path:
-    return getDiretorioOutputBase() / "teste1"
-
-
-def getDiretorioOutputTeste2() -> Path:
-    return getDiretorioOutputBase() / "teste2"
-
-
 def getArquivoConsolidado() -> Path:
-    # INPUT do Teste 2 vem do OUTPUT do Teste 1
-    return getDiretorioOutputTeste1() / "consolidado_despesas.csv"
+    return OUTPUT_TESTE1_DIR / "consolidado_despesas.csv"
 
 
 def getArquivoCadopLocal() -> Path:
-    return getDiretorioRaw() / cadopFileName
+    return RAW_DIR / cadopFileName
 
 
 def getArquivoFinalTeste2() -> Path:
-    # OUTPUT do Teste 2
-    return getDiretorioOutputTeste2() / "consolidado_despesas_final.csv"
+    return OUTPUT_TESTE2_DIR / "consolidado_despesas_final.csv"
 
 
 def criarSessao() -> requests.Session:
@@ -88,71 +58,38 @@ def baixarCadopSeNecessario() -> Path:
 
 def detectarEncoding(caminho: Path) -> str:
     amostra = caminho.read_bytes()[:200_000]
-    for encoding in ("utf-8-sig", "utf-8", "latin-1"):
+    for enc in ("utf-8-sig", "utf-8", "latin-1"):
         try:
-            amostra.decode(encoding)
-            return encoding
+            amostra.decode(enc)
+            return enc
         except UnicodeDecodeError:
             continue
     return "latin-1"
 
 
+def detectarDelimiter(caminho: Path) -> str:
+    amostra = caminho.read_text(encoding=detectarEncoding(caminho), errors="ignore")[
+        :50_000
+    ]
+    return ";" if amostra.count(";") > amostra.count(",") else ","
+
+
 def normalizarHeader(nome: str) -> str:
     nome = (nome or "").strip().lower()
     nome = re.sub(r"\s+", " ", nome)
-    nome = nome.replace("ã", "a").replace("á", "a").replace("à", "a")
-    nome = nome.replace("é", "e").replace("ê", "e")
-    nome = nome.replace("í", "i")
-    nome = nome.replace("ó", "o").replace("ô", "o")
-    nome = nome.replace("ú", "u")
-    nome = nome.replace("ç", "c")
-    nome = nome.replace(" ", "_")
-    return nome
-
-
-def limparDigitos(valor: str) -> str:
-    return re.sub(r"\D+", "", valor or "")
-
-
-def parseDecimal(valor: str) -> Optional[Decimal]:
-    v = (valor or "").strip()
-    if not v:
-        return None
-    try:
-        return Decimal(v)
-    except (InvalidOperation, ValueError):
-        return None
-
-
-def validarCnpj(cnpj: str) -> bool:
-    cnpj = limparDigitos(cnpj)
-    if len(cnpj) != 14:
-        return False
-    if cnpj == cnpj[0] * 14:
-        return False
-
-    def calcDv(base: str) -> str:
-        pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-        pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-
-        soma = 0
-        for i, p in enumerate(pesos1):
-            soma += int(base[i]) * p
-        resto = soma % 11
-        dv1 = "0" if resto < 2 else str(11 - resto)
-
-        base2 = base + dv1
-        soma = 0
-        for i, p in enumerate(pesos2):
-            soma += int(base2[i]) * p
-        resto = soma % 11
-        dv2 = "0" if resto < 2 else str(11 - resto)
-
-        return dv1 + dv2
-
-    base = cnpj[:12]
-    dv = cnpj[12:]
-    return calcDv(base) == dv
+    nome = (
+        nome.replace("ã", "a")
+        .replace("á", "a")
+        .replace("à", "a")
+        .replace("é", "e")
+        .replace("ê", "e")
+        .replace("í", "i")
+        .replace("ó", "o")
+        .replace("ô", "o")
+        .replace("ú", "u")
+        .replace("ç", "c")
+    )
+    return nome.replace(" ", "_")
 
 
 def escolherMaisCompleto(a: CadopRegistro, b: CadopRegistro) -> CadopRegistro:
@@ -164,17 +101,13 @@ def escolherMaisCompleto(a: CadopRegistro, b: CadopRegistro) -> CadopRegistro:
         s += 1 if x.uf else 0
         return s
 
-    sa = score(a)
-    sb = score(b)
-    if sb > sa:
-        return b
-    return a
+    return b if score(b) > score(a) else a
 
 
 def carregarCadopPorRegistroAns(cadopPath: Path) -> Dict[str, CadopRegistro]:
-    encoding = detectarEncoding(cadopPath)
+    enc = detectarEncoding(cadopPath)
 
-    with open(cadopPath, encoding=encoding, newline="") as f:
+    with open(cadopPath, encoding=enc, newline="") as f:
         reader = csv.reader(f, delimiter=";", quotechar='"')
         header = next(reader, [])
         if not header:
@@ -193,7 +126,7 @@ def carregarCadopPorRegistroAns(cadopPath: Path) -> Dict[str, CadopRegistro]:
         out: Dict[str, CadopRegistro] = {}
 
         for row in reader:
-            registroAns = limparDigitos(
+            registroAns = limpar_digitos(
                 get(row, "registro_ans") or get(row, "registro_operadora")
             )
             if not registroAns:
@@ -201,7 +134,7 @@ def carregarCadopPorRegistroAns(cadopPath: Path) -> Dict[str, CadopRegistro]:
 
             item = CadopRegistro(
                 registroAns=registroAns,
-                cnpj=limparDigitos(get(row, "cnpj")),
+                cnpj=limpar_digitos(get(row, "cnpj")),
                 razaoSocial=get(row, "razao_social"),
                 modalidade=get(row, "modalidade"),
                 uf=get(row, "uf"),
@@ -215,13 +148,6 @@ def carregarCadopPorRegistroAns(cadopPath: Path) -> Dict[str, CadopRegistro]:
         return out
 
 
-def detectarDelimiter(caminho: Path) -> str:
-    amostra = caminho.read_text(encoding=detectarEncoding(caminho), errors="ignore")[
-        :50_000
-    ]
-    return ";" if amostra.count(";") > amostra.count(",") else ","
-
-
 def executarEnriquecimentoEValidacao() -> Path:
     consolidadoPath = getArquivoConsolidado()
     if not consolidadoPath.exists():
@@ -233,15 +159,13 @@ def executarEnriquecimentoEValidacao() -> Path:
     cadop = carregarCadopPorRegistroAns(cadopPath)
 
     outPath = getArquivoFinalTeste2()
-
-    # ✅ garante que data/output/teste2 existe antes de abrir o arquivo
     outPath.parent.mkdir(parents=True, exist_ok=True)
 
-    consolidadoEnc = detectarEncoding(consolidadoPath)
+    enc = detectarEncoding(consolidadoPath)
     delim = detectarDelimiter(consolidadoPath)
 
     with (
-        open(consolidadoPath, encoding=consolidadoEnc, newline="") as fIn,
+        open(consolidadoPath, encoding=enc, newline="") as fIn,
         open(outPath, "w", encoding="utf-8", newline="") as fOut,
     ):
         reader = csv.DictReader(fIn, delimiter=delim)
@@ -263,7 +187,7 @@ def executarEnriquecimentoEValidacao() -> Path:
         writer.writeheader()
 
         for row in reader:
-            registroAns = limparDigitos(
+            registroAns = limpar_digitos(
                 row.get("RegistroANS") or row.get("reg_ans") or ""
             )
             trimestre = (row.get("Trimestre") or row.get("trimestre") or "").strip()
@@ -283,11 +207,11 @@ def executarEnriquecimentoEValidacao() -> Path:
 
             erros = []
 
-            cnpjOk = validarCnpj(cnpj) if cnpj else False
+            cnpjOk = validar_cnpj(cnpj) if cnpj else False
             if not cnpjOk:
                 erros.append("cnpj_invalido")
 
-            valor = parseDecimal(valorStr)
+            valor = parse_decimal(valorStr)
             valorOk = bool(valor is not None and valor > 0)
             if not valorOk:
                 erros.append("valor_nao_positivo")
@@ -321,5 +245,4 @@ def executarEnriquecimentoEValidacao() -> Path:
 
 
 if __name__ == "__main__":
-    out = executarEnriquecimentoEValidacao()
-    print(f"Gerado: {out}")
+    print(f"Gerado: {executarEnriquecimentoEValidacao()}")

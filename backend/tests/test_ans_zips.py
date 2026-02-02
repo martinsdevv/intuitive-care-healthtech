@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import os
 import zipfile
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urljoin
 
 import pytest
-from app.services.ans_download import (
+from app.usecases.ans_download import (
     baixarHtml,
     baseUrl,
     criarSessao,
@@ -55,12 +55,10 @@ def _pick_years(anos: list[str], max_anos: int) -> list[str]:
     if not anos:
         return []
 
-    # sempre inclui menor e maior
     chosen = [anos[0]]
     if anos[-1] != anos[0]:
         chosen.append(anos[-1])
 
-    # adiciona anos do meio, espaçados
     if len(chosen) < max_anos and len(anos) > 2:
         remaining = [a for a in anos[1:-1]]
         if remaining:
@@ -86,12 +84,8 @@ def test_ans_inventory_baixar_extrair_amostra():
     tmp = getDiretorioTmp()
     tmp.mkdir(parents=True, exist_ok=True)
 
-    # Configurações acerca de quantos arquivos baixar, e se irá manter os arquivos baixados ou não
-    # Crie as variaveis de ambiente ou mude os valores fallback
     max_anos = int(os.getenv("ANS_MAX_ANOS", "10"))
     max_zips_por_ano = int(os.getenv("ANS_MAX_ZIPS_POR_ANO", "2"))
-    # 0: apagar arquivos baixados
-    # 1: manter arquivos baixados
     keep_tmp = os.getenv("ANS_KEEP_TMP", "1") == "1"
 
     falhas: list[str] = []
@@ -136,8 +130,7 @@ def test_ans_inventory_baixar_extrair_amostra():
                     inner_sizes: list[tuple[str, int]] = []
 
                     with zipfile.ZipFile(zip_path, "r") as zf:
-                        infos = zf.infolist()
-                        for info in infos:
+                        for info in zf.infolist():
                             name = info.filename
                             if name.endswith("/"):
                                 continue
@@ -173,7 +166,6 @@ def test_ans_inventory_baixar_extrair_amostra():
                     falhas.append(f"{ano}/{zip_name} -> {e}")
                     print(f"  ❌ {zip_name} ({e})")
 
-        # resumo geral
         if inventories:
             ext_total = Counter()
             for inv in inventories:

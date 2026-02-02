@@ -184,8 +184,8 @@ Consolidar os dados normalizados dos 3 trimestres em um único CSV e gerar um ZI
 ---
 
 ## Artefatos gerados (1.3)
-- `data/final/consolidado_despesas.csv`
-- `data/final/consolidado_despesas.zip`
+- `data/output/teste1/consolidado_despesas.csv`
+- `data/output/teste1/consolidado_despesas.zip`
 
 
 ## Teste 2 — Transformação, Enriquecimento e Validação
@@ -243,6 +243,7 @@ Motivo: pipeline auditável (não perde dados sem certeza).
 
 ## Artefatos gerados (2.2 e 2.1)
 - `data/output/teste2/consolidado_despesas_final.csv`
+- `data/output/teste2/consolidado_despesas_final.zip`
 
 ---
 

@@ -2,7 +2,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import pytest
-from app.services.ans_download import (
+from app.usecases.ans_download import (
     baixarHtml,
     baseUrl,
     criarSessao,
@@ -11,6 +11,7 @@ from app.services.ans_download import (
 
 
 def getRaizProjeto() -> Path:
+    # backend/tests -> backend -> repo root
     return Path(__file__).resolve().parents[2]
 
 
@@ -73,7 +74,6 @@ def test_baixar_todos_os_arquivos_ans():
                     print(f"  ❌ {link} ({e})")
 
     finally:
-        # limpeza do diretório tmp
         for arquivo in diretorioTmp.glob("*"):
             try:
                 arquivo.unlink()

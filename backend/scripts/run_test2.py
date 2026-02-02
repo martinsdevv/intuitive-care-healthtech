@@ -8,39 +8,22 @@ sys.path.insert(0, str(SRC))
 import argparse
 import shutil
 
-from app.services.ans_agregate import executarAgregacaoAns
-from app.services.ans_enrich_validate import executarEnriquecimentoEValidacao
-
-
-def getRaizProjeto() -> Path:
-    return Path(__file__).resolve().parents[2]
-
-
-def getOutputTeste2() -> Path:
-    return getRaizProjeto() / "data/output/teste2"
-
-
-def getDeliveryDir() -> Path:
-    return getRaizProjeto() / "delivery"
+from app.core.paths import DELIVERY_DIR, OUTPUT_TESTE2_DIR
+from app.usecases.ans_agregate import executarAgregacaoAns
+from app.usecases.ans_enrich_validate import executarEnriquecimentoEValidacao
 
 
 def limparTeste2(nome: str):
-    """
-    Clean do Teste 2:
-    - Remove apenas data/output/teste2
-    - NÃO remove a pasta delivery
-    - Opcional: remove só o zip de entrega específico (se existir)
-    """
-    out = getOutputTeste2()
-    if out.exists():
-        shutil.rmtree(out)
-        print(f"Removido: {out}")
+    # apaga somente outputs do teste 2
+    if OUTPUT_TESTE2_DIR.exists():
+        shutil.rmtree(OUTPUT_TESTE2_DIR)
+        print(f"Removido: {OUTPUT_TESTE2_DIR}")
 
-    # remove apenas o arquivo de entrega, não a pasta
-    delivery_zip = getDeliveryDir() / f"Teste_Agregacao_{nome}.zip"
-    if delivery_zip.exists():
-        delivery_zip.unlink()
-        print(f"Removido: {delivery_zip}")
+    # opcional: apaga só o zip de entrega específico, sem apagar a pasta delivery
+    entrega = DELIVERY_DIR / f"Teste_Agregacao_{nome}.zip"
+    if entrega.exists():
+        entrega.unlink()
+        print(f"Removido: {entrega}")
 
 
 def main(clean: bool, nome: str):
@@ -57,13 +40,11 @@ def main(clean: bool, nome: str):
     print("=== TESTE 2.3 — Agregação ===")
     csvAgregado, zipAgregado = executarAgregacaoAns(nome_zip=nome)
     print(f"Gerado CSV: {csvAgregado}")
-    print(f"Gerado ZIP: {zipAgregado}")
+    print(f"Gerado ZIP (output): {zipAgregado}")
 
-    # Entrega (delivery/) — garantir que existe, mas NUNCA apagar
-    deliveryDir = getDeliveryDir()
-    deliveryDir.mkdir(parents=True, exist_ok=True)
-
-    zipEntrega = deliveryDir / f"Teste_Agregacao_{nome}.zip"
+    # entrega: runner é o único responsável por delivery/
+    DELIVERY_DIR.mkdir(parents=True, exist_ok=True)
+    zipEntrega = DELIVERY_DIR / f"Teste_Agregacao_{nome}.zip"
     shutil.copyfile(zipAgregado, zipEntrega)
 
     print(f"Entrega gerada: {zipEntrega}")
@@ -81,8 +62,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--nome",
         default="Gabriel_Martins",
-        help="Nome usado no arquivo final de entrega (ex: Gabriel_Martins)",
+        help="Nome usado no arquivo final (ex: Gabriel_Martins)",
     )
-
     args = parser.parse_args()
+
     main(clean=args.clean, nome=args.nome)
