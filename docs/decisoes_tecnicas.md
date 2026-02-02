@@ -212,6 +212,7 @@ Isso evita “inventar” CNPJ a partir de colunas que não representam CNPJ.
 
 ### Duplicidades no cadastro
 - Se houver mais de um registro para o mesmo `Registro ANS`, escolhe-se o registro “mais completo” (maior número de campos não vazios entre CNPJ/RazãoSocial/Modalidade/UF).
+- Mantém-se registros duplicados que contenham valor gasto diferentes uns dos outros.
 - Motivo: saída determinística e com melhor qualidade média.
 
 ### Trade-off técnico — Estratégia de processamento do join
@@ -241,4 +242,61 @@ Motivo: pipeline auditável (não perde dados sem certeza).
 ---
 
 ## Artefatos gerados (2.2 e 2.1)
-- `data/output/consolidado_despesas_final.csv`
+- `data/output/teste2/consolidado_despesas_final.csv`
+
+---
+
+## 2.3 — Agregação com Múltiplas Estratégias
+
+### Objetivo
+Agrupar o output validado do Teste 2.2/2.1 por **(RazaoSocial, UF)** e calcular:
+- **Total de despesas** por operadora/UF
+- **Média trimestral** por operadora/UF
+- **Desvio padrão** das despesas (para identificar alta variabilidade)
+
+Ao final, ordenar por **total_despesas (desc)**, salvar em `despesas_agregadas.csv` e compactar em `Teste_Agregacao_{meu_nome}.zip`.
+
+---
+
+## Decisões Técnicas — 2.3
+
+### Fonte e pré-condições
+- Entrada: `data/output/teste2/consolidado_despesas_final.csv`
+- A agregação utiliza as colunas já enriquecidas (RazaoSocial, UF) e aproveita as flags de qualidade geradas no Teste 2.1.
+
+### Filtragem de qualidade antes da agregação
+- Linhas com `valor_positivo=1` e `razao_social_nao_vazia=1` são consideradas válidas para análise.
+- Linhas sem UF são descartadas.
+
+Motivo: evitar grupos vazios e reduzir ruído estatístico (ex.: operadoras sem cadastro/enriquecimento).
+
+### Estratégia de cálculo — streaming + estatística online (Welford)
+Opções avaliadas:
+
+**(A) Armazenar lista de valores por grupo**
+- Implementação simples.
+- Custo de memória cresce com o número de linhas (pior caso: alto).
+
+**(B) Estatística online por grupo (escolhido)**
+- Processa o CSV em streaming (linha a linha).
+- Mantém, por grupo, apenas: `n`, `mean`, `m2` e `total` (algoritmo de Welford).
+- Memória proporcional ao número de grupos (operadora/UF), não ao número de linhas.
+
+Decisão: **Streaming + Welford por grupo**, reduzindo uso de RAM e mantendo cálculo correto de média e desvio padrão em 1 passagem.
+
+### Precisão numérica
+- `Decimal` é usado para totais/médias/desvio padrão, evitando erros de ponto flutuante em valores financeiros.
+
+### Trade-off técnico — Ordenação
+Após a agregação, os resultados são materializados e ordenados em memória por `total_despesas` (desc).
+
+Justificativa:
+- O número de grupos agregados é muito menor que o número de linhas do CSV.
+- Ordenar apenas os grupos reduz custo e mantém o código simples/auditável.
+- Alternativas (ordenar incrementalmente ou em disco) foram consideradas desnecessárias para o volume do exercício.
+
+---
+
+## Artefatos gerados (2.3)
+- `data/output/teste2/despesas_agregadas.csv`
+- `delivery/Teste_Agregacao_Gabriel_Martins.zip`

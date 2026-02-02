@@ -15,7 +15,7 @@ def getDiretorioStaging() -> Path:
 
 
 def getDiretorioFinal() -> Path:
-    return getRaizProjeto() / "data/output"
+    return getRaizProjeto() / "data/output/teste1"
 
 
 def getArquivoStaging() -> Path:

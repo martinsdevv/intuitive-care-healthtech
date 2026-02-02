@@ -32,12 +32,21 @@ def getDiretorioRaw() -> Path:
     return getRaizProjeto() / "data/raw"
 
 
-def getDiretorioOutput() -> Path:
+def getDiretorioOutputBase() -> Path:
     return getRaizProjeto() / "data/output"
 
 
+def getDiretorioOutputTeste1() -> Path:
+    return getDiretorioOutputBase() / "teste1"
+
+
+def getDiretorioOutputTeste2() -> Path:
+    return getDiretorioOutputBase() / "teste2"
+
+
 def getArquivoConsolidado() -> Path:
-    return getDiretorioOutput() / "consolidado_despesas.csv"
+    # INPUT do Teste 2 vem do OUTPUT do Teste 1
+    return getDiretorioOutputTeste1() / "consolidado_despesas.csv"
 
 
 def getArquivoCadopLocal() -> Path:
@@ -45,7 +54,8 @@ def getArquivoCadopLocal() -> Path:
 
 
 def getArquivoFinalTeste2() -> Path:
-    return getDiretorioOutput() / "consolidado_despesas_final.csv"
+    # OUTPUT do Teste 2
+    return getDiretorioOutputTeste2() / "consolidado_despesas_final.csv"
 
 
 def criarSessao() -> requests.Session:
@@ -209,32 +219,31 @@ def detectarDelimiter(caminho: Path) -> str:
     amostra = caminho.read_text(encoding=detectarEncoding(caminho), errors="ignore")[
         :50_000
     ]
-    if amostra.count(";") > amostra.count(","):
-        return ";"
-    return ","
+    return ";" if amostra.count(";") > amostra.count(",") else ","
 
 
 def executarEnriquecimentoEValidacao() -> Path:
     consolidadoPath = getArquivoConsolidado()
     if not consolidadoPath.exists():
         raise RuntimeError(
-            "consolidado_despesas.csv não encontrado em data/output. Rode o Teste 1 primeiro."
+            "consolidado_despesas.csv não encontrado em data/output/teste1. Rode o Teste 1 primeiro."
         )
 
     cadopPath = baixarCadopSeNecessario()
     cadop = carregarCadopPorRegistroAns(cadopPath)
 
-    outDir = getDiretorioOutput()
-    outDir.mkdir(parents=True, exist_ok=True)
     outPath = getArquivoFinalTeste2()
 
+    # ✅ garante que data/output/teste2 existe antes de abrir o arquivo
+    outPath.parent.mkdir(parents=True, exist_ok=True)
+
     consolidadoEnc = detectarEncoding(consolidadoPath)
+    delim = detectarDelimiter(consolidadoPath)
 
     with (
         open(consolidadoPath, encoding=consolidadoEnc, newline="") as fIn,
         open(outPath, "w", encoding="utf-8", newline="") as fOut,
     ):
-        delim = detectarDelimiter(consolidadoPath)
         reader = csv.DictReader(fIn, delimiter=delim)
         fieldnames = [
             "RegistroANS",

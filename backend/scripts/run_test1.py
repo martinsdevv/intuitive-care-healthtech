@@ -23,7 +23,7 @@ def limparDiretorios():
         raiz / "data/raw",
         raiz / "data/extracted",
         raiz / "data/staging",
-        raiz / "data/output",
+        raiz / "data/output/teste1",
     ]
 
     for pasta in pastas:

@@ -95,44 +95,47 @@ Documentação: tratamento de inconsistências em `docs/decisoes_tecnicas.md`
 
 **Rodar Teste**
 - Arquivo: `backend/scripts/run_test1.py`
+- Exemplo:
+  - `python backend/scripts/run_test1.py`
+  - `python backend/scripts/run_test1.py --clean`
 
 
 **Saídas:**
-- `data/output/consolidado_despesas.csv`
-- `data/output/consolidado_despesas.zip`
+- `data/output/teste1/consolidado_despesas.csv`
+- `data/output/teste1/consolidado_despesas.zip`
 
 ---
 
 ### Teste 2 — Transformação e Validação de Dados
 
-A sequência de etapas começou pelo 2.2, detalhes em `docs/decisoes_tecnicas.md`
+A sequência de etapas começou pelo **2.2** (enunciado pede join por CNPJ, mas o consolidado do Teste 1 usa `RegistroANS`).  
+Detalhes e trade-offs em `docs/decisoes_tecnicas.md`.
 
-- [x] 2.2 - Enriquecimento de Dados com Tratamento de Falhas 
+- [x] **2.2 — Enriquecimento de Dados com Tratamento de Falhas**  
+  Código: `backend/src/app/services/ans_enrich_validate.py`
 
-Codigo: `backend/src/app/services/ans_enrich_validate.py`
-- [x] 2.1 - Validação de Dados com Estratégias Diferentes
- 
-Codigo: `backend/src/app/services/ans_enrich_validate.py`
-- [x] 2.3 - Agregação com Múltiplas Estratégias
+- [x] **2.1 — Validação de Dados com Estratégias Diferentes**  
+  Código: `backend/src/app/services/ans_enrich_validate.py`
 
-Codigo: `backend/src/app/services/ans_agregate.py` 
+- [x] **2.3 — Agregação com Múltiplas Estratégias**  
+  Código: `backend/src/app/services/ans_agregate.py`
 
-
-Documentação: tratamento de inconsistências em `docs/decisoes_tecnicas.md` 
-
+**Documentação**: decisões técnicas e tratamento de inconsistências em `docs/decisoes_tecnicas.md`.
 
 **Trade-offs**
-- CADOP carregado em memória como dicionário, visto que é pequeno e permite acesso rápido.
-- Consolidado processado em streaming para manter consumo de RAM previsível.
-- Marcar e manter CNPJs inválidos, adicionando colunas de validação e lista de erros por linha.
-
+- CADOP carregado em memória como dicionário (arquivo pequeno, acesso O(1) e simplifica o join).
+- Consolidado processado em streaming (consumo previsível de RAM).
+- Registros inválidos não são descartados: são marcados com flags (`cnpj_valido`, `valor_positivo`, etc.) e lista `erros` por linha.
+- Na agregação, ordenação é feita após reduzir o dataset (ordenamos apenas os grupos agregados, não as linhas cruas).
 
 **Rodar Teste**
 - Arquivo: `backend/scripts/run_test2.py`
+- Exemplo:
+  - `python backend/scripts/run_test2.py`
+  - `python backend/scripts/run_test2.py --clean`
 
-
-**Saídas:**
-- `data/output/consolidado_despesas_final.csv`
-- `data/output/consolidado_despesas_final.zip`
-
----
+**Saídas**
+- `data/output/teste2/consolidado_despesas_final.csv`
+- `data/output/teste2/consolidado_despesas_final.zip`
+- `data/output/teste2/despesas_agregadas.csv`
+- `delivery/Teste_Agregacao_Gabriel_Martins.zip`
