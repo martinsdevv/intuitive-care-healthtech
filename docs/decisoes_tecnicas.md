@@ -186,3 +186,59 @@ Consolidar os dados normalizados dos 3 trimestres em um único CSV e gerar um ZI
 ## Artefatos gerados (1.3)
 - `data/final/consolidado_despesas.csv`
 - `data/final/consolidado_despesas.zip`
+
+
+## Teste 2 — Transformação, Enriquecimento e Validação
+
+### Objetivo
+Enriquecer o consolidado do Teste 1.3 com dados cadastrais oficiais (CADOP) e aplicar validações de qualidade, produzindo um CSV final para agregações. Começamos pelo 2.2, pois o CSV do teste 1.3 não contém CNPJ (decisão explicada abaixo)
+
+---
+
+## Decisões Técnicas — 2.2 (Enriquecimento / Join)
+
+### Chave de join (decisão prática)
+O enunciado menciona join por **CNPJ**, porém o CSV do Teste 1.3 não contém CNPJ (apenas `RegistroANS`).  
+Decisão adotada:
+
+1. Join por `RegistroANS` (consolidado) ↔ `Registro ANS` (CADOP)
+2. Trazer o CNPJ real e campos do cadastro (Razão Social, Modalidade, UF)
+
+Isso evita “inventar” CNPJ a partir de colunas que não representam CNPJ.
+
+### Registros sem match no cadastro
+- Mantidos no output (left join), com campos cadastrais vazios.
+- Motivo: evitar perda de dados financeiros e permitir auditoria.
+
+### Duplicidades no cadastro
+- Se houver mais de um registro para o mesmo `Registro ANS`, escolhe-se o registro “mais completo” (maior número de campos não vazios entre CNPJ/RazãoSocial/Modalidade/UF).
+- Motivo: saída determinística e com melhor qualidade média.
+
+### Trade-off técnico — Estratégia de processamento do join
+- CADOP carregado em memória como dicionário, visto que é pequeno e permite acesso rápido.
+- Consolidado processado em streaming para manter consumo de RAM previsível.
+
+Decisão: **dict em memória (cadastro) + streaming (consolidado)**.
+
+---
+
+## Decisões Técnicas — 2.1 (Validação)
+
+### Validações aplicadas (após enriquecimento)
+- CNPJ válido (formato + dígitos verificadores)
+- ValorDespesas numérico e positivo
+- RazaoSocial não vazia
+
+### Trade-off técnico — Tratamento de CNPJ inválido
+Opções consideradas:
+- Descartar registros inválidos
+- Corrigir automaticamente
+- Marcar e manter
+
+Decisão: **marcar e manter**, adicionando colunas de validação e lista de erros por linha.  
+Motivo: pipeline auditável (não perde dados sem certeza).
+
+---
+
+## Artefatos gerados (2.2 e 2.1)
+- `data/output/consolidado_despesas_final.csv`

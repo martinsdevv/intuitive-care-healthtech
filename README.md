@@ -75,13 +75,13 @@ Os dados brutos e normalizados estão disponiveis na pasta `data/`, contendo os 
 ### Teste 1 — Integração com API 
 
 
-- [x] Acesso à api e download dos arquivos de Demonstrações Contábeis dos últimos 3 trimestres. 
+- [x] 1.1 - Acesso à api e download dos arquivos de Demonstrações Contábeis dos últimos 3 trimestres. 
 
 Codigo: `backend/src/app/services/ans_download.py`
-- [x] Extração e normalização de arquivos de acordo com o formato de cada um (CSV, TXT e XLSX). 
+- [x] 1.2 - Extração e normalização de arquivos de acordo com o formato de cada um (CSV, TXT e XLSX). 
  
 Codigo: `backend/src/app/services/ans_normalization.py`
-- [x] Consolidação dos dados e geração do arquivo final em CSV e ZIP. 
+- [x] 1.3 - Consolidação dos dados e geração do arquivo final em CSV e ZIP. 
 
 Codigo: `backend/src/app/services/ans_consolidate.py` 
 
@@ -100,5 +100,39 @@ Documentação: tratamento de inconsistências em `docs/decisoes_tecnicas.md`
 **Saídas:**
 - `data/output/consolidado_despesas.csv`
 - `data/output/consolidado_despesas.zip`
+
+---
+
+### Teste 2 — Transformação e Validação de Dados
+
+A sequência de etapas começou pelo 2.2, detalhes em `docs/decisoes_tecnicas.md`
+
+- [x] 2.2 - Enriquecimento de Dados com Tratamento de Falhas 
+
+Codigo: `backend/src/app/services/ans_enrich_validate.py`
+- [x] 2.1 - Validação de Dados com Estratégias Diferentes
+ 
+Codigo: `backend/src/app/services/ans_enrich_validate.py`
+- [x] 2.3 - Agregação com Múltiplas Estratégias
+
+Codigo: `backend/src/app/services/ans_agregate.py` 
+
+
+Documentação: tratamento de inconsistências em `docs/decisoes_tecnicas.md` 
+
+
+**Trade-offs**
+- CADOP carregado em memória como dicionário, visto que é pequeno e permite acesso rápido.
+- Consolidado processado em streaming para manter consumo de RAM previsível.
+- Marcar e manter CNPJs inválidos, adicionando colunas de validação e lista de erros por linha.
+
+
+**Rodar Teste**
+- Arquivo: `backend/scripts/run_test2.py`
+
+
+**Saídas:**
+- `data/output/consolidado_despesas_final.csv`
+- `data/output/consolidado_despesas_final.zip`
 
 ---
