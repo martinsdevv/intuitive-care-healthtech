@@ -25,13 +25,50 @@ Este repositório contém a implementação do teste técnico proposto para alin
 
 ---
 
-## Progresso dos Testes
+## Configuração do Ambiente de Desenvolvimento
 
-Aqui consta o que foi feito em cada teste, incluindo os trade-offs técnicos decididos. A especificação de cada escolha de trade-off está disponível em `docs/decisoes_tecnicas.md`. Para rodar cada teste, execute o arquivo correspondente na pasta `backend/scripts`: 
+- Da raiz do projeto, digite:
+```bash
+python -m venv venv
+```
+
+- Ative o ambiente virtual
+- Linux/Mac:
+```bash
+source venv/bin/activate
+```
+
+- Windows:
+```bash
+venv\Scripts\activate
+```
+
+- Instale as dependências
+```bash
+pip install -r requirements.txt
+```
+
+- Crie um arquivo `.env` com as variáveis de ambiente necessárias (segue .env.example na raiz do projeto)
+
+- Para rodar cada teste, execute o arquivo correspondente na pasta `backend/scripts` (onde X é o numero do teste): 
 
 ```bash
-python <nome_arquivo>.py
+python run_testX.py --clean
 ```
+
+- Ou execute na raiz do projeto:
+```bash
+python backend/scripts/run_testX.py --clean
+```
+
+- A flag `--clean` remove os arquivos gerados anteriormente antes de executar o teste. Utilize para um teste limpo evitando duplicação de dados.
+
+---
+
+## Progresso dos Testes
+
+Aqui consta o que foi feito em cada teste, incluindo os trade-offs técnicos decididos. A especificação de cada escolha de trade-off está disponível em `docs/decisoes_tecnicas.md`. 
+
 
 Os dados brutos e normalizados estão disponiveis na pasta `data/`, contendo os dados "crus" (raw), zips extraídos (extracted), arquivos finais (output) dentre outros. Mantive assim para facilitar a visualização por parte do avaliador.
 
@@ -44,7 +81,7 @@ Codigo: `backend/src/app/services/ans_download.py`
 - [x] Extração e normalização de arquivos de acordo com o formato de cada um (CSV, TXT e XLSX). 
  
 Codigo: `backend/src/app/services/ans_normalization.py`
-- [ ] Consolidação dos dados e geração do arquivo final em CSV e ZIP. 
+- [x] Consolidação dos dados e geração do arquivo final em CSV e ZIP. 
 
 Codigo: `backend/src/app/services/ans_consolidate.py` 
 
@@ -65,53 +102,3 @@ Documentação: tratamento de inconsistências em `docs/decisoes_tecnicas.md`
 - `data/output/consolidado_despesas.zip`
 
 ---
-
-### Teste 2 — Transformação e Validação dos Dados
-- [ ] Validação de CNPJ, valores monetários e razão social
-- [ ] Enriquecimento dos dados com informações cadastrais da ANS
-- [ ] Agregação por operadora, trimestre e ano
-
-**Saída esperada:**
-- `data/output/despesas_agregadas.csv`
-
----
-
-### Teste 3 — Banco de Dados e Análise
-- [ ] Criação do modelo relacional e índices
-- [ ] Importação dos dados consolidados para o banco
-- [ ] Consultas analíticas solicitadas no teste
-
-Os scripts SQL estão disponíveis no diretório `db/`.
-
----
-
-### Teste 4 — API e Interface Web
-- [ ] Implementação da API REST para exposição dos dados
-- [ ] Paginação, busca e estatísticas agregadas
-- [ ] Interface web em Vue.js para visualização das informações
-- [ ] Coleção Postman e documentação da API
-
----
-
-## Como Executar (Resumo)
-
-Cada etapa do teste pode ser executada de forma isolada.
-
-Instruções detalhadas estão disponíveis nos READMEs específicos de cada diretório:
-- `backend/README.md`
-- `frontend/README.md`
-- `db/README.md`
-
----
-
-## Decisões Técnicas
-
-As principais decisões técnicas e trade-offs adotados durante o desenvolvimento estão documentados em:
-- `docs/decisions.md`
-
----
-
-## Entrega
-
-O arquivo final para submissão está disponível em:
-- `delivery/Teste_Gabriel_Martins.zip`

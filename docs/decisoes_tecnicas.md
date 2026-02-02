@@ -133,6 +133,56 @@ Assim como o teste 1.1 exploratório, não faz parte do pipeline principal.
 
 ---
 
-## Próximo Passo — Teste 1.3
+## 1.3 — Consolidação e Análise de Inconsistências
 
-Consolidação dos dados normalizados e geração do artefato final conforme especificação.
+### Objetivo
+Consolidar os dados normalizados dos 3 trimestres em um único CSV e gerar um ZIP final `consolidado_despesas.zip`.
+
+**CSV final (colunas):**  
+`RegistroANS, RazaoSocial, Trimestre, Ano, ValorDespesas`
+
+> Observação: o dataset de Demonstrações Contábeis da ANS não fornece CNPJ nem Razão Social da operadora.  
+> Por isso, `RegistroANS (REG_ANS)` é utilizado como identificador da operadora e `RazaoSocial` é mantida como "NÃO INFORMADA".
+
+---
+
+## Decisões Técnicas — 1.3
+
+### Fonte de dados
+- Entrada da consolidação é o staging gerado no 1.2 (`data/staging/...csv`).
+- Evita reprocessar ZIP/CSV e garante consistência com as normalizações já aplicadas.
+
+### Ausência de CNPJ e Razão Social no dataset
+- O dataset não disponibiliza **CNPJ** nem **Razão Social**.
+- `REG_ANS` é o identificador oficial da operadora junto à ANS e foi adotado como `RegistroANS`.
+- `RazaoSocial` é mantida como "NÃO INFORMADA" para evitar inferência incorreta a partir de campos não destinados a isso.
+
+### Chave de agregação
+- Agregação por `(RegistroANS, Ano, Trimestre)`.
+- Soma de `ValorDespesas` por chave.
+
+### Métrica consolidada (ValorDespesas)
+- `ValorDespesas` é calculado pela soma dos valores filtrados no staging para o trimestre/ano.
+
+---
+
+## Análise Crítica — Tratamento de Inconsistências (1.3)
+
+### “CNPJs duplicados com razões sociais diferentes”
+- Não aplicável diretamente: **CNPJ** e **Razão Social** não existem na fonte.
+- No escopo do exercício, o identificador consolidado é `RegistroANS (REG_ANS)` e `RazaoSocial` é "NÃO INFORMADA".
+
+### Valores zerados ou negativos
+- Valores zerados: mantidos.
+- Valores negativos: descartados.
+- Justificativa: zeros podem representar ausência real; negativos distorcem `ValorDespesas` sem modelagem explícita de estornos.
+
+### Trimestres com formatos de data inconsistentes
+- Normalização feita no 1.2 e `Ano/Trimestre` persistidos no staging.
+- O 1.3 usa `Ano/Trimestre` do staging, evitando parse de data novamente.
+
+---
+
+## Artefatos gerados (1.3)
+- `data/final/consolidado_despesas.csv`
+- `data/final/consolidado_despesas.zip`

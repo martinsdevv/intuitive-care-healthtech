@@ -8,11 +8,11 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import List, Optional
 
-from ans_download import (
+from app.services.ans_download import (
     Trimestre,
     executarDownloadAns,
 )
-from ans_download import (
+from app.services.ans_download import (
     getDiretorioSaida as getDiretorioRaw,
 )
 
@@ -239,7 +239,23 @@ def executarProcessamentoAns() -> Path:
         )
 
         arquivos = extrairZip(job.zipPath, destino)
-        csvs = [a for a in arquivos if a.suffix.lower() == ".csv"]
+
+        csvs: List[Path] = []
+        naoCsv: List[Path] = []
+
+        for a in arquivos:
+            if a.suffix.lower() == ".csv":
+                csvs.append(a)
+            else:
+                naoCsv.append(a)
+
+        if naoCsv:
+            exts = sorted({p.suffix.lower() or "<sem_ext>" for p in naoCsv})
+            print(f"{job.zipPath.name} | arquivos não-CSV detectados: {exts}")
+
+        if not csvs:
+            print(f"{job.zipPath.name} | nenhum CSV encontrado (ignorando)")
+            continue
 
         for csvPath in csvs:
             stats = processarCsvParaStaging(csvPath, stagingPath, trimestre)

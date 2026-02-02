@@ -86,8 +86,12 @@ def test_ans_inventory_baixar_extrair_amostra():
     tmp = getDiretorioTmp()
     tmp.mkdir(parents=True, exist_ok=True)
 
+    # Configurações acerca de quantos arquivos baixar, e se irá manter os arquivos baixados ou não
+    # Crie as variaveis de ambiente ou mude os valores fallback
     max_anos = int(os.getenv("ANS_MAX_ANOS", "10"))
     max_zips_por_ano = int(os.getenv("ANS_MAX_ZIPS_POR_ANO", "2"))
+    # 0: apagar arquivos baixados
+    # 1: manter arquivos baixados
     keep_tmp = os.getenv("ANS_KEEP_TMP", "1") == "1"
 
     falhas: list[str] = []
