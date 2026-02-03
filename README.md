@@ -421,6 +421,6 @@ Ela inclui exemplos de:
 
 #### Visualização Final Frontend + Dados
 
-![operadoras](docs/view_operadoras.png)
+![operadoras](docs/view_operadoras_geral.png)
 
-![detalhes](docs/view_detalhes.png)
+![detalhes](docs/view_detalhes_operadora.png)
