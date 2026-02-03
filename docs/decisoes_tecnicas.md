@@ -1,5 +1,19 @@
 # Decisões Técnicas — HealthTech
 
+## Nota Geral sobre Identificadores (CNPJ vs RegistroANS)
+
+O dataset de Demonstrações Contábeis da ANS **não contém CNPJ nem Razão Social**.
+Por isso, o pipeline foi arquitetado em **duas fases distintas**:
+
+1. **Teste 1 — Consolidação Financeira**: usa `RegistroANS` como identificador técnico.
+2. **Teste 2 — Enriquecimento Cadastral**: resolve CNPJ, Razão Social, UF e Modalidade via CADOP.
+
+Essa separação evita inferência incorreta de dados cadastrais e garante auditabilidade.
+
+---
+
+# Decisões Técnicas — HealthTech
+
 Este documento registra as decisões técnicas tomadas ao longo da implementação dos testes propostos, bem como os trade-offs avaliados.  
 O objetivo é explicitar **por que** determinadas escolhas foram feitas, considerando robustez e clareza.
 
@@ -301,3 +315,291 @@ Justificativa:
 ## Artefatos gerados (2.3)
 - `data/output/teste2/despesas_agregadas.csv`
 - `delivery/Teste_Agregacao_Gabriel_Martins.zip`
+
+---
+
+## Teste 3 — Banco de Dados e Análise (PostgreSQL)
+
+### Objetivo
+Persistir os dados consolidados e agregados dos Testes 1 e 2 em um banco relacional (PostgreSQL > 10), estruturando tabelas adequadas e respondendo consultas analíticas conforme solicitado no enunciado.
+
+As fontes utilizadas são:
+- Consolidado final de despesas (Teste 2.2 / 2.1)
+- Agregação por Razão Social e UF (Teste 2.3)
+- Cadastro oficial de operadoras (CADOP)
+
+---
+
+## Decisões Técnicas — 3.2 (Modelagem e DDL)
+
+### Trade-off técnico — Normalização
+
+**Opção A — Tabela única desnormalizada**
+- Queries analíticas mais simples.
+- Redundância elevada de dados cadastrais.
+- Atualizações de cadastro propagam inconsistências.
+- Menor clareza conceitual entre fatos e dimensões.
+
+**Opção B — Modelo normalizado (escolhida)**
+- Separação clara entre:
+  - Dimensão `operadora` (dados cadastrais / CADOP)
+  - Fato `despesa_trimestral` (valores financeiros por período)
+- Menor redundância.
+- Atualizações no cadastro não exigem reprocessar fatos.
+- Queries analíticas continuam simples com JOINs bem definidos.
+
+**Decisão:** adotado **modelo normalizado**, considerando:
+- Volume maior de dados no fato (despesas).
+- Baixa frequência de atualização do cadastro (CADOP).
+- Melhor organização sem impacto relevante de performance.
+
+---
+
+### Trade-off técnico — Tipos de dados
+
+**Valores monetários**
+Opções avaliadas:
+- `FLOAT`: rápido, porém impreciso para valores financeiros.
+- `INTEGER` (centavos): preciso, mas reduz legibilidade e flexibilidade.
+- `NUMERIC(18,2)` (escolhido): precisão exata e semântica clara.
+
+**Decisão:** `NUMERIC(18,2)` para todos os valores financeiros.
+
+**Datas**
+- O dataset de despesas não possui datas completas, apenas `Ano` e `Trimestre`.
+- Persistir como `(ano SMALLINT, trimestre SMALLINT)` evita parsing artificial e ambiguidades.
+- Datas reais (ex.: cadastro CADOP) são armazenadas como `DATE`.
+
+---
+
+## Decisões Técnicas — 3.3 (Importação e Saneamento)
+
+### Estratégia de importação
+- Uso de tabelas de *staging* com colunas `TEXT`.
+- Importação via `\copy` (client-side), facilitando execução local.
+- Conversão e validação realizadas na passagem para tabelas finais tipadas.
+
+### Tratamento de inconsistências
+
+**Valores NULL em campos obrigatórios**
+- Campos obrigatórios: `RegistroANS`, `Ano`, `Trimestre`, `ValorDespesas`.
+- Registros com ausência nesses campos são rejeitados.
+- Motivo: não é possível garantir integridade analítica.
+
+**Strings em campos numéricos**
+- Tentativa de conversão automática:
+  - Remoção de separadores de milhar.
+  - Conversão de vírgula decimal para ponto.
+- Falha na conversão → registro rejeitado.
+
+**Datas em formatos inconsistentes**
+- Tentativa de parse nos formatos:
+  - `YYYY-MM-DD`
+  - `DD/MM/YYYY`
+- Falha no parse → valor convertido para `NULL` (quando não chave analítica).
+
+**Auditoria**
+- Registros rejeitados são armazenados em tabela específica de rejeições,
+  contendo o payload original e o motivo da rejeição.
+- Decisão visa rastreabilidade e não descarte silencioso de dados.
+
+---
+
+## Decisões Técnicas — 3.4 (Consultas Analíticas)
+
+### Query 1 — Crescimento percentual entre trimestres
+
+**Desafio**
+Operadoras podem não possuir dados em todos os trimestres.
+
+**Decisão**
+- Para cada operadora, considera-se:
+  - Primeiro trimestre disponível no dataset.
+  - Último trimestre disponível no dataset.
+- O crescimento é calculado apenas se o valor inicial for positivo.
+
+Motivo:
+- Evita excluir operadoras incompletas.
+- Mantém análise coerente com os dados realmente disponíveis.
+
+---
+
+### Query 2 — Distribuição por UF
+
+**Estratégia**
+- Primeiro agrega-se por `(Operadora, UF)`.
+- Em seguida:
+  - Soma total por UF.
+  - Média de despesas por operadora dentro da UF.
+
+Motivo:
+- Evita distorções causadas por diferentes quantidades de registros por operadora.
+- Mantém interpretação estatística correta.
+
+---
+
+### Query 3 — Operadoras acima da média em múltiplos trimestres
+
+**Trade-off técnico**
+Opções avaliadas:
+- Subqueries aninhadas complexas.
+- CTEs com etapas explícitas (escolhido).
+
+**Decisão**
+Uso de CTEs para:
+- Identificar os 3 trimestres analisados.
+- Calcular média global por trimestre.
+- Comparar operadoras individualmente.
+- Contar quantos trimestres cada operadora ficou acima da média.
+
+Motivo:
+- Código mais legível e auditável.
+- Boa performance com índices adequados.
+- Manutenibilidade superior para alterações futuras.
+
+
+## Teste 4 — API e Interface Web
+
+### Objetivo
+Expor uma API em Python com rotas para consultar:
+- operadoras (paginadas, com busca)
+- detalhes por CNPJ
+- histórico de despesas por operadora
+- estatísticas agregadas (total, média, top 5, distribuição por UF)
+
+E construir um frontend em Vue.js consumindo essas rotas.
+
+---
+
+## Trade-offs Técnicos — Backend (Teste 4)
+
+### 4.2.1 — Framework: FastAPI (escolhido)
+
+**Opções avaliadas**
+- Flask
+- FastAPI
+
+**Por que FastAPI**
+- Tipagem e contratos via Pydantic → reduz ambiguidade entre backend e frontend.
+- Docs automáticos (OpenAPI/Swagger) → acelera validação das rotas e facilita demonstração.
+- Performance adequada e ergonomia (routing/validation) sem aumentar muito a complexidade.
+
+---
+
+### 4.2.2 — Estratégia de Paginação: Offset-based (page/limit) (escolhido)
+
+**Opções avaliadas**
+- Offset-based (page/limit)
+- Cursor-based
+- Keyset pagination
+
+**Decisão**
+- O enunciado explicitamente pede `page` e `limit`, e o dataset é estável no contexto do teste.
+- Simplifica o frontend e reduz complexidade de implementação.
+
+**Trade-off**
+- Em offsets altos, performance pode degradar; e atualizações concorrentes podem gerar “pulo/duplicação”.
+- Para produção e datasets muito grandes, keyset pagination seria preferível.
+
+---
+
+### 4.2.3 — /api/estatisticas: Cache em memória por TTL (escolhido)
+
+**Opções avaliadas**
+- Calcular sempre na hora
+- Cachear por X minutos
+- Pré-calcular e armazenar em tabela
+
+**Decisão**
+- As estatísticas são agregações potencialmente caras; o dataset do teste muda pouco.
+- Cache simples em memória com TTL (ex.: 5 min) reduz carga e mantém consistência aceitável.
+
+**Trade-off**
+- Cache in-memory não é compartilhado entre múltiplas instâncias.
+- Em produção, opções como Redis (cache distribuído) ou materialização seriam consideradas.
+
+---
+
+### 4.2.4 — Estrutura de Resposta: Dados + Metadados (escolhido)
+
+**Opções avaliadas**
+- Apenas `[{...}, {...}]`
+- `{ data: [...], total: 100, page: 1, limit: 10 }`
+
+**Decisão**
+- Metadados simplificam paginação e UX no frontend (total, página atual, limite).
+- Evita inferências ambíguas no cliente.
+
+---
+
+## Qualidade e Manutenibilidade — Camadas (Router / Service / Repository)
+
+**Decisão**
+- Routers ficam “finos”: apenas HTTP (parâmetros, status codes, response model).
+- `services/`: normalização, regras e orquestração (ex.: validação de CNPJ, cache de estatísticas).
+- `repositories/`: consultas SQL (único lugar com acesso ao DB).
+
+**Benefícios**
+- Código mais testável (services/repos podem ser testados sem FastAPI).
+- Queries centralizadas e fáceis de auditar.
+- Evolução simples (trocar query/índice sem tocar no contrato HTTP).
+
+---
+
+## Segurança — SQL Injection
+
+**Decisão**
+- Consultas feitas com `sqlalchemy.text()` + parâmetros bindados (`:param`), nunca concatenando input do usuário no SQL.
+
+**Justificativa**
+- Parâmetros bindados evitam que `q/cnpj` alterem a estrutura da query (mitiga SQL injection).
+- Regra: *input do usuário entra apenas como valor em params*.
+
+---
+
+## Tratamento de Erros (Backend)
+
+**Padrões**
+- `422` para entradas inválidas (ex.: CNPJ com dígitos insuficientes).
+- `404` para recurso não encontrado.
+- `500` para erros inesperados com mensagem genérica (não expor detalhes internos).
+
+**Decisão**
+- Retornar mensagens específicas quando o usuário pode agir (corrigir input).
+- Mensagem genérica em `500` para não vazar stacktrace/SQL; logs ficam no servidor.
+
+---
+
+## Trade-offs Técnicos — Frontend (Teste 4)
+
+### 4.3.1 — Estratégia de Busca/Filtro: Server-side (escolhido)
+- Busca via `q` na API, evitando carregar todas as operadoras no cliente.
+- Melhor escala e UX estável com paginação.
+
+### 4.3.2 — Gerenciamento de Estado: Composables (Vue 3) (escolhido)
+- Escopo do teste é pequeno; composables reduzem boilerplate.
+- Se crescer (múltiplas telas/fluxos), Pinia seria o próximo passo natural.
+
+### 4.3.3 — Performance da Tabela
+- Paginação server-side (limitando render).
+- Virtualização só seria necessária com listagens muito grandes no cliente.
+
+### 4.3.4 — Erros, Loading e Dados vazios
+
+**Erros de rede/API**
+- 4xx: mensagens específicas (ex.: “CNPJ inválido”, “Operadora não encontrada”).
+- 5xx: mensagem genérica (“Erro interno, tente novamente”) + botão de retry.
+- Falha de rede/timeout: “Servidor indisponível / sem conexão”.
+
+**Loading**
+- Estado `loading` por tela:
+  - listagem: skeleton/spinner na tabela
+  - detalhes: placeholders + spinner no gráfico/histórico
+
+**Dados vazios**
+- Listagem sem resultados: “Nenhuma operadora encontrada para o filtro”.
+- Histórico vazio: “Sem despesas registradas para esta operadora”.
+
+**Análise crítica (genérico vs específico)**
+- Específico quando o usuário consegue corrigir o problema.
+- Genérico em `500` por segurança e para reduzir ruído; logs garantem rastreabilidade.

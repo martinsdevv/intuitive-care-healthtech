@@ -1,5 +1,15 @@
 # Teste Técnico — Intuitive Care
 
+## Nota de Organização do Documento
+
+Este README foi organizado de forma **progressiva e incremental**, acompanhando a evolução do projeto ao longo dos testes.
+Os Testes 1 e 2 utilizam **checklists operacionais**, pois representam pipelines executáveis.
+Os Testes 3 e 4 utilizam **descrições estruturais**, pois tratam de persistência, análise e exposição de dados.
+
+---
+
+# Teste Técnico — Intuitive Care
+
 Este repositório contém a implementação do teste técnico proposto para alinhamento da vaga de estágio na empresa **Intuitive Care**.
 
 Testes contemplados:
@@ -19,6 +29,8 @@ Testes contemplados:
 │   ├── scripts/                 # Entrypoints (run_test1.py, run_test2.py, ...)
 │   ├── src/app/
 │   │   ├── api/                 # API (Teste 4)
+│   │   ├── services/            # Camada de serviço (Teste 4)
+│   │   ├── repositories/        # Camada de acesso ao banco (Teste 4)
 │   │   ├── core/                # Config/Paths/Tipos compartilhados
 │   │   ├── domain/              # Modelos e validações
 │   │   └── usecases/            # Etapas do pipeline (Testes 1 e 2)
@@ -100,6 +112,57 @@ python backend/scripts/run_test2.py --clean --nome Gabriel_Martins
 ```
 
 ---
+
+#### Como rodar a API (PostgreSQL)
+
+1) Suba o banco e rode o Teste 3 (ou rode os scripts SQL):
+
+```bash
+psql -U postgres -d <seu_banco> -f db/001_ddl.sql
+psql -U postgres -d <seu_banco> -f db/002_import.sql
+```
+
+2) Configure a variável de ambiente:
+
+- Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+```bash
+DATABASE_URL="postgresql+psycopg://<seu_usuario>:<sua_senha>@localhost:5432/<seu_banco>"
+```
+
+- Ou configure a variável de ambiente diretamente no terminal:
+
+```bash
+# Linux/Mac
+export DATABASE_URL="postgresql+psycopg://<seu_usuario>:<sua_senha>@localhost:5432/<seu_banco>"
+
+# Windows CMD
+set DATABASE_URL="postgresql+psycopg://<seu_usuario>:<sua_senha>@localhost:5432/<seu_banco>"
+
+# Windows PowerShell
+$env:DATABASE_URL="postgresql+psycopg://<seu_usuario>:<sua_senha>@localhost:5432/<seu_banco>"
+```
+
+3) Rode o servidor:
+
+- Use o runner em `backend/scripts/run_api.py`
+
+```bash 
+python backend/scripts/run_api.py
+```
+
+- Ou rode diretamente no terminal (a flag --app-dir é obrigatória): 
+
+```bash
+uvicorn app.api.main:app --reload --port 8000 --app-dir backend/src
+```
+
+> A documentação interativa fica em:
+> - Swagger: `/docs`
+> - ReDoc: `/redoc`
+
+
+---
+
 
 ## Progresso dos Testes
 
@@ -200,19 +263,101 @@ psql -U postgres -d <seu_banco> -f db/003_queries.sql
 docs/decisoes_tecnicas.md.
 ---
 
-### Teste 4 — API + Interface Web *(a implementar)*
+### Teste 4 — API + Interface Web (FastAPI + Vue.js)
 
-- [ ] API em `backend/src/app/api`
-- [ ] Frontend Vue em `frontend/`
+Este teste entrega duas partes:
 
----
+1) **API em Python** (FastAPI) expondo operadoras, despesas e estatísticas  
+2) **Frontend em Vue.js** consumindo a API (tabela paginada, busca/filtro, gráfico por UF e detalhes)
 
-## Testes Automatizados (Pytest)
+Os arquivos relacionados à API estão em:
 
-Os testes em `backend/tests` são **exploratórios** e marcados com `@pytest.mark.integration`.
+- `backend/src/app/api`: Inicio da API, conexão com o banco de dados, schemas e rotas
+- `backend/src/app/repositories`: Repositórios de dados, camada intermediária de acesso ao banco de dados
+- `backend/src/app/services`: Serviços de negócio, camada de acesso às operações de negócios
 
-Para rodar:
+> As decisões técnicas e trade-offs do Teste 4 estão documentadas em `docs/decisoes_tecnicas.md`.
+
+#### 4.1 — Fonte de Dados
+
+A API utiliza **PostgreSQL** (o banco criado no Teste 3) como fonte única de dados.
+
+#### 4.2 — Rotas da API
+
+Base URL: `http://localhost:8000`
+
+- `GET /api/operadoras?page=<int>&limit=<int>&q=<str?>`  
+  Lista operadoras com paginação e filtro opcional por **razão social** ou **CNPJ**.
+
+- `GET /api/operadoras/{cnpj}`  
+  Retorna detalhes cadastrais de uma operadora (por CNPJ).
+
+- `GET /api/operadoras/{cnpj}/despesas`  
+  Histórico de despesas da operadora (por trimestre/ano).
+
+- `GET /api/estatisticas`  
+  Estatísticas agregadas:
+  - total de despesas
+  - média
+  - top 5 operadoras por total
+  - distribuição de despesas por UF (para o gráfico do frontend)
+
+#### Como rodar a API (PostgreSQL)
+
+1) Suba o banco e rode o Teste 3 (ou rode os scripts SQL):
 
 ```bash
-pytest backend/tests -m integration -s
+psql -U postgres -d <seu_banco> -f db/001_ddl.sql
+psql -U postgres -d <seu_banco> -f db/002_import.sql
 ```
+
+2) Configure a variável de ambiente:
+
+- Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+```bash
+DATABASE_URL="postgresql+psycopg://<seu_usuario>:<sua_senha>@localhost:5432/<seu_banco>"
+```
+
+- Ou configure a variável de ambiente diretamente no terminal:
+
+```bash
+# Linux/Mac
+export DATABASE_URL="postgresql+psycopg://<seu_usuario>:<sua_senha>@localhost:5432/<seu_banco>"
+
+# Windows CMD
+set DATABASE_URL="postgresql+psycopg://<seu_usuario>:<sua_senha>@localhost:5432/<seu_banco>"
+
+# Windows PowerShell
+$env:DATABASE_URL="postgresql+psycopg://<seu_usuario>:<sua_senha>@localhost:5432/<seu_banco>"
+```
+
+3) Rode o servidor:
+
+- Use o runner em `backend/scripts/run_api.py`
+
+```bash 
+python backend/scripts/run_api.py
+```
+
+- Ou rode diretamente no terminal (a flag --app-dir é obrigatória): 
+
+```bash
+uvicorn app.api.main:app --reload --port 8000 --app-dir backend/src
+```
+
+> A documentação interativa fica em:
+> - Swagger: `/docs`
+> - ReDoc: `/redoc`
+
+#### 4.4 — Postman
+
+A coleção do Postman fica em `docs/postman/healthtech.postman_collection.json`.
+
+Ela inclui exemplos de:
+- listagem paginada
+- busca por `q`
+- detalhes por CNPJ
+- histórico de despesas
+- estatísticas agregadas
+
+---

@@ -1,2 +1,8 @@
 requests
 pytest
+sqlalchemy
+pydantic
+uvicorn
+fastapi
+python-dotenv
+psycopg
