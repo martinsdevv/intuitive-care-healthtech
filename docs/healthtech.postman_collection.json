@@ -1,0 +1,561 @@
+{
+  "info": {
+    "_postman_id": "2d693596-4124-4f55-b85b-97655f1f4741",
+    "name": "HealthTech API",
+    "description": "Coleção Postman para demonstrar as rotas do Teste 4 (FastAPI).\n\nVariáveis:\n\n- baseUrl: URL base da API\n    \n- cnpj: CNPJ de uma operadora existente (14 dígitos)\n    \n- page: página\n    \n- limit: limite por página\n    \n- q: filtro por razão social ou CNPJ (parcial)\n    \n\nRotas:\n\n- GET /api/operadoras\n    \n- GET /api/operadoras/{cnpj}\n    \n- GET /api/operadoras/{cnpj}/despesas\n    \n- GET /api/estatisticas",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "38538129",
+    "_collection_link": "https://go.postman.co/collection/38538129-2d693596-4124-4f55-b85b-97655f1f4741?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Operadoras",
+      "item": [
+        {
+          "name": "GET /api/operadoras (paginado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Tem campos de paginação', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('data');",
+                  "  pm.expect(json).to.have.property('total');",
+                  "  pm.expect(json).to.have.property('page');",
+                  "  pm.expect(json).to.have.property('limit');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadoras?page={{page}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadoras"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 — Exemplo de resposta",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/operadoras?page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "operadoras"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"data\": [\n    {\n      \"registro_ans\": 417173,\n      \"cnpj\": \"12345678000199\",\n      \"razao_social\": \"QUALICORP ADMINISTRADORA DE BENEFICIOS S.A.\",\n      \"nome_fantasia\": null,\n      \"modalidade\": \"Administradora\",\n      \"uf\": \"SP\",\n      \"cidade\": \"SAO PAULO\",\n      \"logradouro\": \"AV EXEMPLO\",\n      \"numero\": \"100\",\n      \"complemento\": null,\n      \"bairro\": \"CENTRO\",\n      \"cep\": \"01000000\",\n      \"ddd\": \"11\",\n      \"telefone\": \"000000000\",\n      \"fax\": null,\n      \"endereco_eletronico\": \"contato@exemplo.com\",\n      \"representante\": \"Fulano\",\n      \"cargo_representante\": \"Diretor\",\n      \"regiao_comercializacao\": \"Nacional\",\n      \"data_registro_ans\": \"2007-01-01\"\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"limit\": 10\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/operadoras (paginado + busca q)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data é array', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadoras?page={{page}}&limit={{limit}}&q={{q}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadoras"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                },
+                {
+                  "key": "q",
+                  "value": "{{q}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 — Exemplo de resposta",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/operadoras?page=1&limit=10&q=saude",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "operadoras"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "q",
+                      "value": "saude"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"data\": [\n    {\n      \"registro_ans\": 423815,\n      \"cnpj\": \"98765432000155\",\n      \"razao_social\": \"SAGRADA SAUDE ASSISTENCIA MEDICA LTDA\",\n      \"nome_fantasia\": null,\n      \"modalidade\": \"Medicina de Grupo\",\n      \"uf\": \"MG\",\n      \"cidade\": \"BELO HORIZONTE\",\n      \"logradouro\": null,\n      \"numero\": null,\n      \"complemento\": null,\n      \"bairro\": null,\n      \"cep\": null,\n      \"ddd\": null,\n      \"telefone\": null,\n      \"fax\": null,\n      \"endereco_eletronico\": null,\n      \"representante\": null,\n      \"cargo_representante\": null,\n      \"regiao_comercializacao\": null,\n      \"data_registro_ans\": null\n    }\n  ],\n  \"total\": 1,\n  \"page\": 1,\n  \"limit\": 10\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/operadoras/{cnpj} (detalhes)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tem registro_ans e cnpj', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('registro_ans');",
+                  "  pm.expect(json).to.have.property('cnpj');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadoras/{{cnpj}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadoras",
+                "{{cnpj}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 — Exemplo de resposta",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/operadoras/12345678000199",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "operadoras",
+                    "12345678000199"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"registro_ans\": 417173,\n  \"cnpj\": \"12345678000199\",\n  \"razao_social\": \"QUALICORP ADMINISTRADORA DE BENEFICIOS S.A.\",\n  \"nome_fantasia\": null,\n  \"modalidade\": \"Administradora\",\n  \"uf\": \"SP\",\n  \"cidade\": \"SAO PAULO\",\n  \"logradouro\": \"AV EXEMPLO\",\n  \"numero\": \"100\",\n  \"complemento\": null,\n  \"bairro\": \"CENTRO\",\n  \"cep\": \"01000000\",\n  \"ddd\": \"11\",\n  \"telefone\": \"000000000\",\n  \"fax\": null,\n  \"endereco_eletronico\": \"contato@exemplo.com\",\n  \"representante\": \"Fulano\",\n  \"cargo_representante\": \"Diretor\",\n  \"regiao_comercializacao\": \"Nacional\",\n  \"data_registro_ans\": \"2007-01-01\"\n}"
+            },
+            {
+              "name": "404 — Operadora não encontrada",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/operadoras/00000000000000",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "operadoras",
+                    "00000000000000"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"Operadora não encontrada\"\n}"
+            },
+            {
+              "name": "422 — CNPJ inválido",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/operadoras/123",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "operadoras",
+                    "123"
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"CNPJ inválido\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/operadoras/{cnpj}/despesas (histórico)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('items é array', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('items');",
+                  "  pm.expect(json.items).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/operadoras/{{cnpj}}/despesas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "operadoras",
+                "{{cnpj}}",
+                "despesas"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 — Exemplo de resposta",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/operadoras/12345678000199/despesas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "operadoras",
+                    "12345678000199",
+                    "despesas"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"cnpj\": \"12345678000199\",\n  \"items\": [\n    { \"ano\": 2024, \"trimestre\": 1, \"valor\": 66245.90 },\n    { \"ano\": 2024, \"trimestre\": 2, \"valor\": 120000.00 },\n    { \"ano\": 2024, \"trimestre\": 3, \"valor\": 250000.00 }\n  ]\n}"
+            },
+            {
+              "name": "404 — Operadora não encontrada",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/operadoras/00000000000000/despesas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "operadoras",
+                    "00000000000000",
+                    "despesas"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"Operadora não encontrada\"\n}"
+            },
+            {
+              "name": "422 — CNPJ inválido",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/operadoras/123/despesas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "operadoras",
+                    "123",
+                    "despesas"
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"CNPJ inválido\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Estatísticas",
+      "item": [
+        {
+          "name": "GET /api/estatisticas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Campos principais existem', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('total_despesas');",
+                  "  pm.expect(json).to.have.property('media_despesas');",
+                  "  pm.expect(json).to.have.property('top5_operadoras');",
+                  "  pm.expect(json).to.have.property('despesas_por_uf');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/estatisticas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "estatisticas"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 — Exemplo de resposta",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/estatisticas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "estatisticas"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"total_despesas\": 5000000.00,\n  \"media_despesas\": 12345.67,\n  \"top5_operadoras\": [\n    {\n      \"cnpj\": \"12345678000199\",\n      \"razao_social\": \"QUALICORP ADMINISTRADORA DE BENEFICIOS S.A.\",\n      \"total_despesas\": 3813321.51\n    },\n    {\n      \"cnpj\": \"98765432000155\",\n      \"razao_social\": \"SAGRADA SAUDE ASSISTENCIA MEDICA LTDA\",\n      \"total_despesas\": 77509.22\n    }\n  ],\n  \"despesas_por_uf\": {\n    \"SP\": 4100000.00,\n    \"MG\": 500000.00,\n    \"ES\": 400000.00\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "cnpj",
+      "value": "12345678000199"
+    },
+    {
+      "key": "page",
+      "value": "1"
+    },
+    {
+      "key": "limit",
+      "value": "10"
+    },
+    {
+      "key": "q",
+      "value": "saude"
+    }
+  ]
+}
