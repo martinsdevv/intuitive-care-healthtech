@@ -16,8 +16,8 @@ Testes contemplados:
 
 1. **Integração com API Pública (ANS)**
 2. **Transformação, Enriquecimento e Validação de Dados**
-3. **Banco de Dados e Análise (SQL)** *(a implementar)*
-4. **API + Interface Web (Frontend)** *(a implementar)*
+3. **Banco de Dados e Análise (SQL)**
+4. **API + Interface Web (Frontend)**
 
 ---
 
