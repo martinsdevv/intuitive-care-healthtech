@@ -1,0 +1,384 @@
+/* ================================
+   Health UI (corporativo / saúde)
+   ================================ */
+
+:root {
+    --bg: #f6f9fc;
+    --surface: #ffffff;
+
+    --text: #0f172a;
+    --muted: #64748b;
+
+    --border: rgba(15, 23, 42, 0.1);
+
+    --primary: #0ea5a4;
+    --primary-ink: #0b6d6d;
+
+    --danger: #dc2626;
+
+    --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.08);
+
+    --mono:
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+}
+
+/* Reset mínimo */
+* {
+    box-sizing: border-box;
+}
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    line-height: 1.45;
+}
+
+a {
+    color: inherit;
+}
+
+code {
+    font-family: var(--mono);
+    font-size: 0.92em;
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+
+/* Tipografia utilitária */
+.h1 {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0;
+}
+.h2 {
+    font-size: 14px;
+    font-weight: 800;
+    margin: 0;
+}
+.muted {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* Layout base do app */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 22px 24px 28px;
+}
+
+/* Cards */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.cardHeader {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    background: linear-gradient(
+        180deg,
+        rgba(14, 165, 164, 0.06),
+        rgba(255, 255, 255, 0)
+    );
+}
+
+.cardTitle {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+}
+
+.cardSub {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.cardBody {
+    padding: 14px 16px;
+}
+
+/* Inputs */
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 13.5px;
+}
+
+.input:focus {
+    outline: none;
+    border-color: rgba(14, 165, 164, 0.6);
+    box-shadow: 0 0 0 4px rgba(14, 165, 164, 0.12);
+}
+
+/* Botões */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 8px 12px;
+    border-radius: 10px;
+
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+}
+
+.btn:hover {
+    border-color: rgba(14, 165, 164, 0.35);
+}
+.btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+select.btn {
+    appearance: none;
+}
+
+/* Badge e Pill */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 7px 10px;
+    border-radius: 999px;
+
+    font-size: 12.5px;
+    font-weight: 700;
+
+    background: rgba(15, 23, 42, 0.03);
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    color: var(--muted);
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 3px 10px;
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    color: var(--primary-ink);
+    background: rgba(14, 165, 164, 0.1);
+    border: 1px solid rgba(14, 165, 164, 0.22);
+}
+
+/* Mono */
+.mono {
+    font-family: var(--mono);
+    font-size: 12.5px;
+}
+
+/* Tabela */
+.tableWrap {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.table thead th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.2px;
+    background: #fbfdff;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+}
+
+.table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    vertical-align: top;
+}
+
+.table tbody tr:hover {
+    background: rgba(14, 165, 164, 0.05);
+}
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* KV grid */
+.kv {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px 12px;
+    align-items: baseline;
+    font-size: 13px;
+}
+
+.kv > span {
+    color: var(--muted);
+}
+.kv > strong {
+    font-weight: 900;
+}
+
+/* Divisor */
+.hr {
+    height: 1px;
+    background: rgba(15, 23, 42, 0.08);
+    margin: 12px 0;
+}
+
+/* Truncate */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Responsivo */
+@media (max-width: 980px) {
+    .container {
+        padding: 18px 16px 22px;
+    }
+}
+
+.table {
+    table-layout: fixed; /* respeita widths do <th> */
+}
+
+/* CNPJ: nunca cortar, pode quebrar */
+.cnpjCell {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.25;
+}
+
+/* Coluna de ações: largura mínima pro botão aparecer */
+.actionsCell {
+    width: 120px;
+    text-align: right;
+}
+
+/* Linha clicável */
+.rowLink {
+    cursor: pointer;
+}
+.rowLink:hover td {
+    background: rgba(14, 165, 164, 0.05);
+}
+
+.table td,
+.table th {
+    padding: 14px 16px; /* antes tava 10~12 */
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Linha mais alta */
+.table tbody tr {
+    height: 72px;
+}
+
+/* CNPJ mais compacto visualmente */
+.cnpjCell {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.3;
+}
+
+/* Modalidade não precisa competir */
+.modalidadeCell {
+    font-size: 13px;
+    color: var(--text);
+}
+
+/* Ação discreta */
+.actionsCell {
+    width: 96px;
+}
+
+.actionsCell .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+/* ===== Table roomy (força visualmente) ===== */
+.table--roomy th,
+.table--roomy td {
+    padding: 16px 18px !important;
+}
+
+.table--roomy tbody tr {
+    height: 78px !important;
+}
+
+.rowMeta {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.rowMeta .dot {
+    opacity: 0.6;
+}
+
+/* CNPJ como info secundária */
+.cnpjCell {
+    font-size: 12px !important;
+    color: var(--muted) !important;
+    line-height: 1.35 !important;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Ações menores */
+.actionsCell {
+    width: 80px;
+    text-align: right;
+}

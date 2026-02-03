@@ -2,6 +2,7 @@ import logging
 
 from app.api.routers import estatisticas, operadoras
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger("healthtech")
@@ -10,6 +11,17 @@ app = FastAPI(
     title="HealthTech API",
     version="1.0.0",
     description="Teste Técnico — Intuitive Care",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Routers

@@ -349,7 +349,64 @@ uvicorn app.api.main:app --reload --port 8000 --app-dir backend/src
 > - Swagger: `/docs`
 > - ReDoc: `/redoc`
 
-#### 4.4 — Postman
+#### Como rodar o Frontend (Vue 3 + Vite)
+
+1) Abra um novo terminal e entre na pasta do frontend:
+
+```bash
+cd frontend
+```
+
+2) Instale as dependências:
+
+```bash
+npm install
+```
+
+3) Configure a URL da api:
+
+- O axios usa baseUrl relativa:
+
+```ts
+export const api = axios.create({
+  baseURL: "",
+  timeout: 15000,
+});
+```
+
+- Então o proxy do vite configura a baseUrl absoluta:
+``` ts
+export default defineConfig({
+  plugins: [vue()],
+  server: {
+    proxy: {
+      "/api": "http://127.0.0.1:8000",  // altere aqui se necessário
+    },
+  },
+});
+```
+
+- Por padrão a api ja inicia na porta 8000 e o frontend na 5173.
+
+- Suba o frontend:
+
+```bash
+npm run dev
+```
+
+#### Funcionalidades da Interface Web
+
+A interface web implementada permite:
+
+- Listagem paginada de operadoras
+- Busca por CNPJ ou Razão Social
+- Visualização de detalhes cadastrais da operadora
+- Histórico de despesas por trimestre
+- Visualização gráfica da distribuição de despesas por UF
+
+- Acesse: `http://localhost:5173`
+
+#### Postman
 
 A coleção do Postman fica em `docs/postman/healthtech.postman_collection.json`.
 
@@ -361,3 +418,9 @@ Ela inclui exemplos de:
 - estatísticas agregadas
 
 ---
+
+#### Visualização Final Frontend + Dados
+
+![operadoras](docs/view_operadoras.png)
+
+![detalhes](docs/view_detalhes.png)
